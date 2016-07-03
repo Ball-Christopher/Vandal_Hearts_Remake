@@ -72,10 +72,6 @@ class Control:
 
 
     def CreateUnits(self):
-        '''
-        CHRIS:
-        Implemented through the layer interface.
-        '''
         P1 = True
         for Unit_Layer in (self.test_layer['Units_P1'], self.test_layer['Units_P2']):
             for Character in Unit_Layer.objects:

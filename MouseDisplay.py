@@ -95,7 +95,7 @@ class MouseDisplay(cocos.layer.Layer):
             return
         # Finally, if we click on an empty square we want to bring up a "End Turn" menu
 
-    def ActionMenu(self,T,last):
+    def ActionMenu(self, T, last):
         # Set flag so that only operations within the menu can be performed.
         self.InMenu = True
         # Create a "Sprite" which is the menu background.
@@ -192,4 +192,11 @@ class MouseDisplay(cocos.layer.Layer):
             if T.hasUnit and T.unit.P1 == PTurn:
                 T.unit.EndTurn()
         DefineGlobals.P1Turn = not DefineGlobals.P1Turn
-        pass
+        # Add the "AI" layer over the top.
+        if not DefineGlobals.P1Turn:
+            Units = [New_Tile.unit for New_Tile in DefineGlobals.tileData.values()
+                     if New_Tile.hasUnit and New_Tile.unit.P1 == DefineGlobals.P1Turn]
+            for Enemy in Units:
+                Enemy.Zombie()
+                Enemy.EndTurn()
+        DefineGlobals.P1Turn = not DefineGlobals.P1Turn

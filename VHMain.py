@@ -22,6 +22,7 @@ Units cannot move to an occupied space.
 Remove highlighting from squares with enemies on for flying units?
 Generate health points for units.
 Allow attacking, remove units when defeated.
+Add Zombie AI (Attack random enemy in range, else do nothing).
 
 Stack:
 Add Zombie AI (go towards nearest and attack).
