@@ -1,5 +1,4 @@
 import pyglet
-from pyglet.window import key,mouse
 
 pyglet.resource.path.append(pyglet.resource.get_script_home())
 pyglet.resource.reindex()
@@ -21,12 +20,17 @@ Create and display units correctly. CONCERN!
 Units cannot move through enemies.
 Units cannot move to an occupied space.
 Remove highlighting from squares with enemies on for flying units?
-
-Stack:
-Fix upside down location from Tiled...
-Fix invisible mountain backdrop.  Conflict with file in folder???
 Generate health points for units.
 Allow attacking, remove units when defeated.
+
+Stack:
+Add Zombie AI (go towards nearest and attack).
+Add direction (+ bonuses for attacking/defending)
+Add class (+bonuses for attacking/defending)
+Add terrain (+bonuses for attacking/defending)
+Add victory scene
+Add magic
+Refactor menu code to avoid extremely long methods.
 Animate movement.
 Indicator on screen for whose turn it is.
 Indicator for moved/unmoved units.

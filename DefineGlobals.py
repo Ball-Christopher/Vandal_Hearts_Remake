@@ -65,18 +65,21 @@ def init():
     P1Turn = None
     tileData = None
     bg = None
-    Ch_Stats = {"Ash":Character(42,5,30,29,23,500,"Hero",5,1),
-                "Clint":Character(36,0,24,26,19,400,"Soldier",5,1),
-                "Diego":Character(31,0,21,23,18,400,"Archer",5,4)}
+    Ch_Stats = {"Ash": Character(42, 5, 30, 29, 23, 500, "Hero", 5, 1),
+                "Clint": Character(36, 0, 24, 26, 19, 400, "Soldier", 5, 1),
+                "Diego": Character(31, 0, 21, 23, 18, 400, "Archer", 5, 4)}
     pass
+
 
 def Start():
     # Create a graphics object effectively.
-    director.init(resizable=True)#width=800, height=600, resizable=True)
+    director.init(resizable=True)  # width=800, height=600, resizable=True)
+
 
 def AddQueue(main_scene):
     # Run the scene we just created.
     Scene_Stack.append(main_scene)
+
 
 def Pop():
     try:

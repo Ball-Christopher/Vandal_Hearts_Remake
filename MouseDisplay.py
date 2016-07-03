@@ -1,9 +1,7 @@
 import cocos
-from cocos import layer
 
 # Import menu classes
 from cocos.menu import Menu,MenuItem, fixedPositionMenuLayout
-from cocos.director import director
 
 '''
 CHRIS
@@ -33,34 +31,33 @@ class MouseDisplay(cocos.layer.Layer):
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         self.position = (x,y)
-        mx,my = DefineGlobals.scroller.pixel_from_screen(x,y)
-        cell = DefineGlobals.bg.get_at_pixel(mx,my)
-        key = DefineGlobals.bg.get_key_at_pixel(mx,my)
-        T = DefineGlobals.tileData[key]
+        mx, my = DefineGlobals.scroller.pixel_from_screen(x, y)
+        cell = DefineGlobals.bg.get_at_pixel(mx, my)
+        key = DefineGlobals.bg.get_key_at_pixel(mx, my)
+        New_Tile = DefineGlobals.tileData[key]
         # Check that user clicked inside the map, and inside any context menus.
         if not cell or self.InMenu:
             return
         # Check that the user is not attacking
         if self.Attack and 'color4' in cell.properties.keys() and \
                         cell.properties['color4'] == (255,0,0,255) and \
-                T.hasUnit and T.unit.P1 != DefineGlobals.P1Turn:
+                New_Tile.hasUnit and New_Tile.unit.P1 != DefineGlobals.P1Turn:
             # Attack method.
             AtUnit = DefineGlobals.tileData[self.last].unit
             DfUnit = DefineGlobals.tileData[key].unit
             DfUnit.Hit(AtUnit)
             if DfUnit.HP <= 0:
                 # Kill the unit, or at least make it disappear
-                #del tileData[key].unit.Sprite
                 DefineGlobals.tileData[key].unit = None
                 DefineGlobals.tileData[key].hasUnit = False
             else:
                 # Counterattack! If it is possible...
                 if abs(self.last[0] - key[0]) + abs(self.last[1] - key[1]) <= DfUnit.AttackRange:
                     AtUnit.Hit(DfUnit)
-                if AtUnit.HP <= 0:
-                    # Kill the unit, or at least make it disappear
-                    DefineGlobals.tileData[self.last].unit = None
-                    DefineGlobals.tileData[self.last].hasUnit = False
+                    if AtUnit.HP <= 0:
+                        # Kill the unit, or at least make it disappear
+                        DefineGlobals.tileData[self.last].unit = None
+                        DefineGlobals.tileData[self.last].hasUnit = False
             self.Attack = False
             self.RemoveHighlight()
             self.UpdateTurn(DefineGlobals.P1Turn)
@@ -79,21 +76,22 @@ class MouseDisplay(cocos.layer.Layer):
         elif self.Attack:
             return
         # Check if user can move the unit (by looking at the tile color)
-        if 'color4' in cell.properties.keys() and cell.properties['color4'] == (0,0,255,255):
+        if 'color4' in cell.properties.keys() and cell.properties['color4'] == (0, 0, 255, 255):
             # Move the unit to this square.
-            T = DefineGlobals.tileData[self.last]
-            NewCell = DefineGlobals.bg.get_key_at_pixel(mx,my)
-            if T.unit.P1 == DefineGlobals.P1Turn and not DefineGlobals.tileData[NewCell].hasUnit:
-                T.unit.MoveUnit(NewCell[0]-self.last[0],NewCell[1]-self.last[1])
-                self.ActionMenu(DefineGlobals.tileData[NewCell],self.last)
-            self.last = DefineGlobals.bg.get_key_at_pixel(mx,my)
+            Old_Tile = DefineGlobals.tileData[self.last]
+            NewCell = DefineGlobals.bg.get_key_at_pixel(mx, my)
+            if Old_Tile.unit.P1 == DefineGlobals.P1Turn and \
+                    (New_Tile == Old_Tile or not DefineGlobals.tileData[NewCell].hasUnit):
+                Old_Tile.unit.MoveUnit(NewCell[0] - self.last[0], NewCell[1] - self.last[1])
+                self.ActionMenu(DefineGlobals.tileData[NewCell], self.last)
+            self.last = DefineGlobals.bg.get_key_at_pixel(mx, my)
             self.RemoveHighlight()
             return
         self.RemoveHighlight()
         # If we have clicked on a unit, highlight the available movement squares.
-        if T.hasUnit and T.unit.P1 == DefineGlobals.P1Turn: #CHECK FOR MOVEMENT AND CORRECT TEAM TOO.
-            T.unit.HighlightAvailable()
-            self.last = DefineGlobals.bg.get_key_at_pixel(mx,my)
+        if New_Tile.hasUnit and New_Tile.unit.P1 == DefineGlobals.P1Turn:  # CHECK FOR MOVEMENT AND CORRECT TEAM TOO.
+            New_Tile.unit.HighlightAvailable()
+            self.last = DefineGlobals.bg.get_key_at_pixel(mx, my)
             return
         # Finally, if we click on an empty square we want to bring up a "End Turn" menu
 
@@ -114,6 +112,11 @@ class MouseDisplay(cocos.layer.Layer):
         l.extend( [MI_Stay, MI_Cancel])
         # Create a menu container.
         self.M = Menu()
+        self.M.font_item['color'] = (0, 0, 0, 255)
+        self.M.font_item['font_size'] = 12
+        self.M.font_item_selected['color'] = (0, 0, 0, 255)
+        self.M.font_item_selected['font_size'] = 15
+        self.M.font_item_selected['bold'] = True
         # Optimally space the menu given the number of items
         Top = self.contextMenuBck.get_rect().get_top()
         Bot = self.contextMenuBck.get_rect().get_bottom()
@@ -121,12 +124,8 @@ class MouseDisplay(cocos.layer.Layer):
         MenuItemPositions = [(0,Mid-((i+1)*2*Mid)//(len(l)+1)) for i in range(len(l))]
         # Create the menu from the list of menu items.  Fixed Position allows
         # us to specify everything relative to the center of the menu sprite.
-        self.M.create_menu(l,layout_strategy=fixedPositionMenuLayout(
+        self.M.create_menu(l, layout_strategy=fixedPositionMenuLayout(
                             MenuItemPositions))
-        # Fix the font size.
-        for MI in self.M.get_children():
-            MI.item.font_size = 15
-            MI.item_selected.font_size = 15
         # Add the menu to the background.
         self.contextMenuBck.add(self.M)
         # Find the units position
@@ -150,10 +149,6 @@ class MouseDisplay(cocos.layer.Layer):
         self.M.position = (0,0)
         # Add the menu to the unit layer.
         DefineGlobals.unit_layer.add(self.contextMenuBck)
-        # Test variables to be deleted later.
-        global M2, M3
-        M2 = self.M
-        M3 = self.contextMenuBck
 
     def Stay(self):
         self.InMenu = False
@@ -163,8 +158,8 @@ class MouseDisplay(cocos.layer.Layer):
 
     def Cancel(self,T,last):
         self.InMenu = False
-        CP = DefineGlobals.bg.get_key_at_pixel(T.unit.Sprite.position[0],T.unit.Sprite.position[1])
-        T.unit.UnMoveUnit(last[0]-CP[0],last[1]-CP[1])
+        CP = DefineGlobals.bg.get_key_at_pixel(T.unit.Sprite.position[0], T.unit.Sprite.position[1])
+        T.unit.MoveUnit(last[0] - CP[0], last[1] - CP[1], Unmove=True)
         DefineGlobals.unit_layer.remove(self.contextMenuBck)
         pass
 
@@ -181,8 +176,8 @@ class MouseDisplay(cocos.layer.Layer):
         # Remove all highlighting from the map...
         for col in DefineGlobals.bg.cells:
             for c in col:
-                DefineGlobals.bg.set_cell_color(c.i,c.j,(255,255,255))
-                DefineGlobals.bg.set_cell_opacity(c.i,c.j,255)
+                DefineGlobals.bg.set_cell_color(c.i, c.j, (255, 255, 255))
+                DefineGlobals.bg.set_cell_opacity(c.i, c.j, 255)
 
     def UpdateTurn(self,PTurn):
         # Check if all units in the current turn have moved

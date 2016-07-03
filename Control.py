@@ -1,8 +1,9 @@
-from cocos import tiles, layer
 import cocos
+from cocos import tiles, layer
+
+from MouseDisplay import MouseDisplay
 from TileData import TileData
 from Unit import Unit
-from MouseDisplay import MouseDisplay
 
 '''
 CHRIS
@@ -22,7 +23,7 @@ class Control:
         pass
 
     def main(self):
-        #global unit_layer,P1Turn # I'm not entirely sure of the merits of this...
+
         DefineGlobals.P1Turn = True
 
         DefineGlobals.Start()
@@ -41,19 +42,16 @@ class Control:
         DefineGlobals.Pop()
 
     def CreateTileMap(self):
-        '''
-        CHRIS: This method reads the background layer and the properties by tile
-        '''
-        #global tileData, bg
+
         # First load the file - This seems awfully slow...
         self.test_layer = tiles.load('Maps/Map-Ch1-St1.tmx')
-        #test_layer = tiles.load('StageMap.tmx')
-        # Extract the background layer
-        bg_layer = self.test_layer['Background']#['map0']
-        # Reorder the cells appropriately
-        # bg_layer.cells = [col[::-1] for col in bg_layer.cells]
 
+        # Extract the background layer
+        bg_layer = self.test_layer['Background']
+
+        # Add background layer to the scroller.
         DefineGlobals.scroller.add(bg_layer)
+
         # Extract the properties into a dictionary
         tileDataArray = {}
         x = 0
@@ -66,12 +64,11 @@ class Control:
 
             x += 1
             y = 0
+
         DefineGlobals.tileData = tileDataArray
         # Add the background layer as a permanent field
         DefineGlobals.bg = bg_layer
-        # And the map size
-        #self.boundary = (DefineGlobals.bg.x,DefineGlobals.bg.y,\
-        #DefineGlobals.bg.x+DefineGlobals.bg.px_width,DefineGlobals.bg.y+DefineGlobals.bg.px_height)
+
 
 
     def CreateUnits(self):
@@ -80,35 +77,34 @@ class Control:
         Implemented through the layer interface.
         '''
         P1 = True
-        for u in (self.test_layer['Units_P1'],self.test_layer['Units_P2']):
-            for o in u.objects:
+        for Unit_Layer in (self.test_layer['Units_P1'], self.test_layer['Units_P2']):
+            for Character in Unit_Layer.objects:
                 # Get unit information
-                UnitType = o.name.split()[0]
-                Dir = o.properties['Dir']
-                Dirmap = {'Up':'10','Down':'1','Left':'4','Right':'7'}
+                UnitType = Character.name.split()[0]
+                Dir = Character.properties['Dir']
+                Dirmap = {'Up': '10', 'Down': '1', 'Left': '4', 'Right': '7'}
                 # Create sprite for unit
                 Image = 'Characters/' + UnitType + Dirmap[Dir] + '.png'
                 unit = cocos.sprite.Sprite(Image)
                 # Get the Tile which the unit is on
-                x,y = o.position
-                print(o.position,DefineGlobals.bg.get_key_at_pixel(x,y),UnitType)
+                x, y = Character.position
+                # print(o.position,DefineGlobals.bg.get_key_at_pixel(x,y),UnitType)
                 T = DefineGlobals.tileData[DefineGlobals.bg.get_key_at_pixel(x,y)]
                 Tile = T.Cell
                 # Put the unit in the correct position
-                unit.position = (o.position[0]+Tile.width//2,o.position[1]+Tile.height//2)
+                unit.position = (Character.position[0] + Tile.width // 2,
+                                 Character.position[1] + Tile.height // 2)
 
                 if P1:
                     Ch = DefineGlobals.Ch_Stats[UnitType]
+                    Properties = {'HP': Ch.HP, 'MP': Ch.MP, 'Move': Ch.Move, 'AtkRng': Ch.AtkRng,
+                                  'AT': Ch.AT, 'DF': Ch.DF, 'AGL': Ch.AGL}
                     # Create a Unit class, which can store the important information for each unit.
-                    U = Unit(unit,T,Image,DefineGlobals.bg,P1,
-                             Ch.HP,Ch.MP,Ch.Move,Ch.AtkRng,Ch.AT,Ch.DF,Ch.AGL)
+                    U = Unit(unit, T, Image, DefineGlobals.bg, P1, Properties)
                     pass
                 else:
                     # Else read in from map information for player 2
-                    U = Unit(unit,T,Image,DefineGlobals.bg,P1,
-                             o.properties['HP'],o.properties['MP'],o.properties['Move'],
-                             o.properties['AtkRng'],o.properties['AT'],o.properties['DF'],
-                             o.properties['AGL'])
+                    U = Unit(unit, T, Image, DefineGlobals.bg, P1, Character.properties)
                     pass
                 # Update the tile information to reflect unit
                 T.hasUnit = True
