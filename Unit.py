@@ -29,6 +29,7 @@ class Unit:
         self.fly = False
         # Variables for the unit
         self.HP = Properties['HP']
+        self.Max_HP = Properties['HP']
         self.MP = Properties['MP']
         self.AT = Properties['AT']
         self.DF = Properties['DF']
@@ -37,11 +38,23 @@ class Unit:
         pass
 
     def Update_Label(self):
-        self.label = cocos.text.Label(str(self.HP),
-                                      font_name='Font_dark_size12.fnt',
-                                      anchor_x="right", anchor_y="bottom")
-        self.label.position = (self.Sprite.width / 2, -self.Sprite.height / 2)
-        self.Sprite.add(self.label)
+        Black = cocos.sprite.Sprite('Resources/black.png', anchor=(50, 400))
+        Black.scale_x = 24 / 100
+        Black.scale_y = 4 / 100
+        if self.P1:
+            Health = cocos.sprite.Sprite('Resources/green.png', anchor=(50, 400))
+            Health.scale_x = self.HP / self.Max_HP * 24 / 100
+            Health.scale_y = 4 / 100
+            Health.position = Health.position[0] - (1 - self.HP / self.Max_HP) / 2 * 24, Health.position[1]
+            pass
+        else:
+            Health = cocos.sprite.Sprite('Resources/red.png', anchor=(50, 400))
+            Health.scale_x = self.HP / self.Max_HP * 24 / 100
+            Health.scale_y = 4 / 100
+            Health.position = Health.position[0] - (1 - self.HP / self.Max_HP) / 2 * 24, Health.position[1]
+            pass
+        self.Sprite.add(Black)
+        self.Sprite.add(Health)
 
     def Hit(self, AtUnit):
         # Simple mechanics for now.
