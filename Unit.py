@@ -196,6 +196,8 @@ class Unit:
                             DefineGlobals.tileData[Cell.i, Cell.j].unit = None
                             DefineGlobals.tileData[Cell.i, Cell.j].hasUnit = False
                 return
+        # Getting here implies that there are no enemies in range.  Now we move.
+        self.Move_Towards_Closest_Enemy()
 
     def Enemy_In_Range(self, Cell):
         Q = [Cell]
@@ -221,3 +223,46 @@ class Unit:
                     Q.append(C)
                     M.append(MovLeft - 1)
         return False, None
+
+    def Move_Towards_Closest_Enemy(self):
+        """
+        Finds the closest enemy (relative to this unit) and moves towards them.  May not necessarily
+        be an optimal path if the movement cost is greater than 1 and there are multiple shortest paths.
+        No explicit tie-breaking is done when more than one closest unit is present.
+        :return:
+        """
+        Q = [self.Tile.Cell]
+        P = set()
+        LL = {}
+        M = [0]
+        while len(Q) > 0:
+            Ind = M.index(min(M))
+            Cell = Q.pop(Ind)
+            MovLeft = M.pop(Ind)
+            P.add(Cell)
+            if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and \
+                            DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 != DefineGlobals.P1Turn:
+                break
+            Temp = self.bg.get_neighbors(Cell)
+            for C in Temp.values():
+                if C is None or C in P:
+                    continue
+                if C in Q:
+                    if M[Q.index(C)] > MovLeft + C.tile.properties['MovementCost']:
+                        M[Q.index(C)] = MovLeft + C.tile.properties['MovementCost']
+                        LL[C] = Cell
+                    continue
+                Q.append(C)
+                LL[C] = Cell
+                M.append(MovLeft + C.tile.properties['MovementCost'])
+        # Compile the shortest path to the nearest enemy.
+        Path = [LL[Cell]]
+        while Path[-1] != self.Tile.Cell:
+            Path.append(LL[Path[-1]])
+        # Go down the path until the movement range runs out.
+        Move_Left = self.MoveRange
+        while Move_Left >= Path[-1].tile.properties['MovementCost']:
+            Next_Cell = Path.pop()
+            Move_Left -= Next_Cell.tile.properties['MovementCost']
+        # Move the unit to this cell
+        self.MoveUnit(Next_Cell.i - self.Tile.Cell.i, Next_Cell.j - self.Tile.Cell.j)
