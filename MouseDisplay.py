@@ -2,7 +2,7 @@ import cocos
 
 # Import menu classes
 from cocos.menu import Menu,MenuItem, fixedPositionMenuLayout
-
+from Utilities import Resolve_Attack
 '''
 CHRIS
 
@@ -42,22 +42,7 @@ class MouseDisplay(cocos.layer.Layer):
         if self.Attack and 'color4' in cell.properties.keys() and \
                         cell.properties['color4'] == (255,0,0,255) and \
                 New_Tile.hasUnit and New_Tile.unit.P1 != DefineGlobals.P1Turn:
-            # Attack method.
-            AtUnit = DefineGlobals.tileData[self.last].unit
-            DfUnit = DefineGlobals.tileData[key].unit
-            DfUnit.Hit(AtUnit)
-            if DfUnit.HP <= 0:
-                # Kill the unit, or at least make it disappear
-                DefineGlobals.tileData[key].unit = None
-                DefineGlobals.tileData[key].hasUnit = False
-            else:
-                # Counterattack! If it is possible...
-                if abs(self.last[0] - key[0]) + abs(self.last[1] - key[1]) <= DfUnit.AttackRange:
-                    AtUnit.Hit(DfUnit)
-                    if AtUnit.HP <= 0:
-                        # Kill the unit, or at least make it disappear
-                        DefineGlobals.tileData[self.last].unit = None
-                        DefineGlobals.tileData[self.last].hasUnit = False
+            Resolve_Attack(self.last, key)
             self.Attack = False
             self.RemoveHighlight()
             self.UpdateTurn(DefineGlobals.P1Turn)
@@ -182,7 +167,6 @@ class MouseDisplay(cocos.layer.Layer):
     def UpdateTurn(self,PTurn):
         # Check if all units in the current turn have moved
         # This is ugly, but it works...
-        print('Called', PTurn)
         for T in DefineGlobals.tileData.values():
             if T.hasUnit and T.unit.P1 == PTurn and T.unit.moved == False:
                 # If there is a unit that hasn't moved on the moving side don't change.

@@ -96,11 +96,11 @@ class Control:
                     Properties = {'HP': Ch.HP, 'MP': Ch.MP, 'Move': Ch.Move, 'AtkRng': Ch.AtkRng,
                                   'AT': Ch.AT, 'DF': Ch.DF, 'AGL': Ch.AGL}
                     # Create a Unit class, which can store the important information for each unit.
-                    U = Unit(unit, T, Image, DefineGlobals.bg, P1, Properties)
+                    U = Unit(unit, T, UnitType, DefineGlobals.bg, P1, Properties)
                     pass
                 else:
                     # Else read in from map information for player 2
-                    U = Unit(unit, T, Image, DefineGlobals.bg, P1, Character.properties)
+                    U = Unit(unit, T, UnitType, DefineGlobals.bg, P1, Character.properties)
                     pass
                 # Update the tile information to reflect unit
                 T.hasUnit = True

@@ -1,20 +1,14 @@
 import cocos
 
-'''
-CHRIS
-
-Controls what happens when a unit wants to move/attack or pretty
-much interact with the map layer or the user.
-'''
-
 import DefineGlobals
+from Utilities import In_Range, Find_Path_To_Nearest_Enemy, Resolve_Attack
 
 
 class Unit:
-    def __init__(self, Sprite, Tile, Image, BG, P1, Properties):
+    def __init__(self, Sprite, Tile, UnitType, BG, P1, Properties):
         self.Sprite = Sprite
         self.Tile = Tile
-        self.Image = Image
+        self.UnitType = UnitType
         self.bg = BG
         self.MoveRange = Properties['Move']
         self.AttackRange = Properties['AtkRng']
@@ -84,27 +78,12 @@ class Unit:
         # Check that the unit can move
         if self.moved: return
         # Highlight the available squares for the unit to move to.
-        Q = [self.Tile.Cell]
-        P = set()
-        M = [self.MoveRange]
-        while len(Q) > 0:
-            Ind = M.index(max(M))
-            Cell = Q.pop(Ind)
-            MovLeft = M.pop(Ind)
-            P.add(Cell)
-            if MovLeft == 0: continue
-            Temp = self.bg.get_neighbors(Cell)
-            for C in Temp.values():
-                if C is None or C in P or (not self.fly and DefineGlobals.tileData[C.i,C.j].hasUnit and
-                                                   DefineGlobals.tileData[C.i,C.j].unit.P1!=DefineGlobals.P1Turn):
-                    continue
-                # Check that the current movement range is not higher...
-                if C in Q:
-                    M[Q.index(C)] = max(M[Q.index(C)], MovLeft - C.tile.properties['MovementCost'])
-                    continue
-                if MovLeft - C.tile.properties['MovementCost'] >= 0:
-                    Q.append(C)
-                    M.append(MovLeft - C.tile.properties['MovementCost'])
+        P = In_Range(self.Tile.Cell, self.MoveRange, self, lambda x: x.tile.properties['MovementCost'],
+                     lambda C, P, Unit: C is None or
+                                        C in P or
+                                        (not Unit.fly and
+                                         DefineGlobals.tileData[C.i, C.j].hasUnit and
+                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn))
         for Cell in P:
             if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and Cell != self.Tile.Cell: continue
             self.bg.set_cell_color(Cell.i, Cell.j, Colour)
@@ -112,32 +91,14 @@ class Unit:
 
     def HighlightAttack(self, Test=False, Colour=(255, 0, 0)):
         # Highlight the available squares for the unit to attack.
-        Q = [self.Tile.Cell]
-        P = set()
-        M = [self.AttackRange]
-        while len(Q) > 0:
-            Ind = M.index(max(M))
-            Cell = Q.pop(Ind)
-            MovLeft = M.pop(Ind)
-            P.add(Cell)
-            if MovLeft == 0: continue
-            Temp = self.bg.get_neighbors(Cell)
-            for C in Temp.values():
-                if C is None or C in P:
-                    continue
-                if Test:
-                    # See if there is a unit that can be attacked here
-                    if DefineGlobals.tileData[C.i, C.j].hasUnit and \
-                                    DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn:
-                        return (True)
-                # Check that the current movement range is not higher...
-                if C in Q:
-                    M[Q.index(C)] = max(M[Q.index(C)], MovLeft - 1)
-                    continue
-                if MovLeft - 1 >= 0:
-                    Q.append(C)
-                    M.append(MovLeft - 1)
-        if Test: return (False)
+        if Test:
+            return In_Range(self.Tile.Cell, self.AttackRange, self, lambda x: 1,
+                            lambda C, P, Unit: C is None or C in P,
+                            Test_Fun=lambda C: DefineGlobals.tileData[C.i, C.j].hasUnit and
+                                               DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn)
+        else:
+            P = In_Range(self.Tile.Cell, self.AttackRange, self,
+                         lambda x: 1, lambda C, P, Unit: C is None or C in P)
         for Cell in P:
             if not DefineGlobals.tileData[Cell.i,Cell.j].hasUnit or \
                             DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 == DefineGlobals.P1Turn: continue
@@ -150,79 +111,35 @@ class Unit:
 
     def Zombie(self) -> None:
         # Start by attacking if possible.
-        Q = [self.Tile.Cell]
-        P = set()
-        M = [self.MoveRange]
-        while len(Q) > 0:
-            Ind = M.index(max(M))
-            Cell = Q.pop(Ind)
-            MovLeft = M.pop(Ind)
-            P.add(Cell)
-            if MovLeft == 0: continue
-            Temp = self.bg.get_neighbors(Cell)
-            for C in Temp.values():
-                if C is None or C in P or (not self.fly and DefineGlobals.tileData[C.i, C.j].hasUnit and
-                                                   DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn):
-                    continue
-                # Check that the current movement range is not higher...
-                if C in Q:
-                    M[Q.index(C)] = max(M[Q.index(C)], MovLeft - C.tile.properties['MovementCost'])
-                    continue
-                if MovLeft - C.tile.properties['MovementCost'] >= 0:
-                    Q.append(C)
-                    M.append(MovLeft - C.tile.properties['MovementCost'])
+        P = In_Range(self.Tile.Cell, self.MoveRange, self,
+                     lambda x: x.tile.properties['MovementCost'],
+                     lambda C, P, Unit: C is None or
+                                        C in P or
+                                        (not self.fly and
+                                         DefineGlobals.tileData[C.i, C.j].hasUnit and
+                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn))
         for Cell in P:
             New_Cell = DefineGlobals.tileData[Cell.i, Cell.j]
             if New_Cell.hasUnit and Cell != self.Tile.Cell: continue
-            Is_Enemy, Enemy_Cell = self.Enemy_In_Range(Cell)
-            if Is_Enemy:
+            Enemy_Cell = self.Enemy_In_Range(Cell)
+            if Enemy_Cell is not None:
                 # Move unit to this square
                 self.MoveUnit(Cell.i - self.Tile.Cell.i, Cell.j - self.Tile.Cell.j)
                 # Clear out the attacking logic.
-                AtUnit = self
-                DfUnit = DefineGlobals.tileData[Enemy_Cell.i, Enemy_Cell.j].unit
-                DfUnit.Hit(AtUnit)
-                if DfUnit.HP <= 0:
-                    # Kill the unit, or at least make it disappear
-                    DefineGlobals.tileData[Enemy_Cell.i, Enemy_Cell.j].unit = None
-                    DefineGlobals.tileData[Enemy_Cell.i, Enemy_Cell.j].hasUnit = False
-                else:
-                    # Counterattack! If it is possible...
-                    if abs(Enemy_Cell.i - Cell.i) + abs(Enemy_Cell.j - Cell.j) <= DfUnit.AttackRange:
-                        AtUnit.Hit(DfUnit)
-                        if AtUnit.HP <= 0:
-                            # This is the ultimate in self-referential dumb-fuckery.  If the unit is killed, then the
-                            # unit class will delete all references to itself... hopefully.
-                            DefineGlobals.tileData[Cell.i, Cell.j].unit = None
-                            DefineGlobals.tileData[Cell.i, Cell.j].hasUnit = False
+                Resolve_Attack((Cell.i, Cell.j), (Enemy_Cell.i, Enemy_Cell.j))
                 return
         # Getting here implies that there are no enemies in range.  Now we move.
         self.Move_Towards_Closest_Enemy()
 
+
     def Enemy_In_Range(self, Cell):
-        Q = [Cell]
-        P = set()
-        M = [self.AttackRange]
-        while len(Q) > 0:
-            Ind = M.index(max(M))
-            Cell = Q.pop(Ind)
-            MovLeft = M.pop(Ind)
-            if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and \
-                            DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 != DefineGlobals.P1Turn:
-                return True, Cell
-            if MovLeft == 0: continue
-            Temp = self.bg.get_neighbors(Cell)
-            for C in Temp.values():
-                if C is None or C in P:
-                    continue
-                # Check that the current movement range is not higher...
-                if C in Q:
-                    M[Q.index(C)] = max(M[Q.index(C)], MovLeft - 1)
-                    continue
-                if MovLeft - 1 >= 0:
-                    Q.append(C)
-                    M.append(MovLeft - 1)
-        return False, None
+        P = In_Range(Cell, self.AttackRange, self,
+                     lambda x: 1,
+                     lambda C, P, Unit: C is None or C in P,
+                     Break_Fun=lambda C: DefineGlobals.tileData[C.i, C.j].hasUnit and
+                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn)
+        return (P)
+
 
     def Move_Towards_Closest_Enemy(self):
         """
@@ -231,34 +148,8 @@ class Unit:
         No explicit tie-breaking is done when more than one closest unit is present.
         :return:
         """
-        Q = [self.Tile.Cell]
-        P = set()
-        LL = {}
-        M = [0]
-        while len(Q) > 0:
-            Ind = M.index(min(M))
-            Cell = Q.pop(Ind)
-            MovLeft = M.pop(Ind)
-            P.add(Cell)
-            if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and \
-                            DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 != DefineGlobals.P1Turn:
-                break
-            Temp = self.bg.get_neighbors(Cell)
-            for C in Temp.values():
-                if C is None or C in P:
-                    continue
-                if C in Q:
-                    if M[Q.index(C)] > MovLeft + C.tile.properties['MovementCost']:
-                        M[Q.index(C)] = MovLeft + C.tile.properties['MovementCost']
-                        LL[C] = Cell
-                    continue
-                Q.append(C)
-                LL[C] = Cell
-                M.append(MovLeft + C.tile.properties['MovementCost'])
-        # Compile the shortest path to the nearest enemy.
-        Path = [LL[Cell]]
-        while Path[-1] != self.Tile.Cell:
-            Path.append(LL[Path[-1]])
+        Path = Find_Path_To_Nearest_Enemy(self.Tile.Cell)
+        if Path == None: return
         # Go down the path until the movement range runs out.
         Move_Left = self.MoveRange
         while Move_Left >= Path[-1].tile.properties['MovementCost']:
