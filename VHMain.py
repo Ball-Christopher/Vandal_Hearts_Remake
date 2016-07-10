@@ -6,9 +6,9 @@ pyglet.resource.reindex()
 # Additional imports
 from Control import Control
 
-import DefineGlobals
+import DG
 
-DefineGlobals.init()
+DG.init()
 
 '''
 CHRIS

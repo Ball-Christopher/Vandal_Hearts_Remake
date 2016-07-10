@@ -16,6 +16,10 @@ class TileData:
         self.unit = None
         pass
 
-    def AddUnit(self,Unit):
+    def Add_Unit(self, Unit):
         self.hasUnit = True
         self.unit = Unit
+
+    def Remove_Unit(self):
+        self.hasUnit = False
+        self.unit = None

@@ -1,6 +1,6 @@
 import pyglet
 
-import DefineGlobals
+import DG
 
 
 def Set_Image(Unit, Image):
@@ -25,8 +25,8 @@ def Resolve_Attack(Attacking_Cell, Defending_Cell):
     :param Defending_Cell: 2D Tuple with Cell coordinates of defending unit.
     :return: None.
     """
-    AtUnit = DefineGlobals.tileData[Attacking_Cell].unit
-    DfUnit = DefineGlobals.tileData[Defending_Cell].unit
+    AtUnit = DG.tileData[Attacking_Cell].unit
+    DfUnit = DG.tileData[Defending_Cell].unit
     Dirmap = {'Up': '10', 'Down': '1', 'Left': '4', 'Right': '7'}
     Direction = Get_Direction(AtUnit, DfUnit)
     Image = 'Characters/' + AtUnit.UnitType + Dirmap[Direction] + '.png'
@@ -34,8 +34,8 @@ def Resolve_Attack(Attacking_Cell, Defending_Cell):
     DfUnit.Hit(AtUnit)
     if DfUnit.HP <= 0:
         # Kill the unit, or at least make it disappear
-        DefineGlobals.tileData[Defending_Cell].unit = None
-        DefineGlobals.tileData[Defending_Cell].hasUnit = False
+        DG.tileData[Defending_Cell].unit = None
+        DG.tileData[Defending_Cell].hasUnit = False
         return
     # Turn towards attacker even if you can't counter.
     Direction = Get_Direction(DfUnit, AtUnit)
@@ -45,8 +45,8 @@ def Resolve_Attack(Attacking_Cell, Defending_Cell):
         AtUnit.Hit(DfUnit)
         if AtUnit.HP <= 0:
             # Kill the unit, or at least make it disappear
-            DefineGlobals.tileData[Attacking_Cell].unit = None
-            DefineGlobals.tileData[Attacking_Cell].hasUnit = False
+            DG.tileData[Attacking_Cell].unit = None
+            DG.tileData[Attacking_Cell].hasUnit = False
 
 
 def In_Range(Start, Value, Unit, Dist_Fun, Update_Condition,
@@ -76,7 +76,7 @@ def In_Range(Start, Value, Unit, Dist_Fun, Update_Condition,
         if Break_Fun is not None and Break_Fun(Cell):
             return Cell
         if MovLeft == 0: continue
-        Temp = DefineGlobals.bg.get_neighbors(Cell)
+        Temp = DG.bg.get_neighbors(Cell)
         for C in Temp.values():
             if Update_Condition(C, P, Unit):
                 continue
@@ -110,10 +110,10 @@ def Find_Path_To_Nearest_Enemy(Start):
         Cell = Q.pop(Ind)
         MovLeft = M.pop(Ind)
         P.add(Cell)
-        if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and \
-                        DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 != DefineGlobals.P1Turn:
+        if DG.tileData[Cell.i, Cell.j].hasUnit and \
+                        DG.tileData[Cell.i, Cell.j].unit.P1 != DG.P1Turn:
             break
-        Temp = DefineGlobals.bg.get_neighbors(Cell)
+        Temp = DG.bg.get_neighbors(Cell)
         for C in Temp.values():
             if C is None or C in P:
                 continue

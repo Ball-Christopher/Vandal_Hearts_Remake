@@ -1,6 +1,6 @@
 import cocos
 
-import DefineGlobals
+import DG
 from Utilities import In_Range, Find_Path_To_Nearest_Enemy, Resolve_Attack
 
 
@@ -56,19 +56,17 @@ class Unit:
         self.Sprite.children = []
         self.Update_Label()
         if self.HP <= 0:
-            DefineGlobals.unit_layer.remove(self.Sprite)
+            DG.unit_layer.remove(self.Sprite)
 
     def MoveUnit(self, x, y, Unmove=False, Debug='') -> None:
         # Moves the unit the number of tiles specified. Positive x right, positive y up.
         self.Sprite.position = (self.Sprite.position[0] + x * self.Tile.Cell.width,
                                 self.Sprite.position[1] + y * self.Tile.Cell.height)
         # Fixes reference to tile
-        self.Tile.hasUnit = False
-        self.Tile.unit = None
-        self.Tile = DefineGlobals.tileData[self.bg.get_key_at_pixel(self.Sprite.x,self.Sprite.y)]
+        self.Tile.Remove_Unit()
+        self.Tile = DG.tileData[self.bg.get_key_at_pixel(self.Sprite.x, self.Sprite.y)]
         if Debug != '': print(Debug, self.bg.get_key_at_pixel(self.Sprite.x, self.Sprite.y))
-        self.Tile.hasUnit = True
-        self.Tile.unit = self
+        self.Tile.Add_Unit(self)
         if Unmove:
             self.moved = False
         else:
@@ -82,10 +80,10 @@ class Unit:
                      lambda C, P, Unit: C is None or
                                         C in P or
                                         (not Unit.fly and
-                                         DefineGlobals.tileData[C.i, C.j].hasUnit and
-                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn))
+                                         DG.tileData[C.i, C.j].hasUnit and
+                                         DG.tileData[C.i, C.j].unit.P1 != DG.P1Turn))
         for Cell in P:
-            if DefineGlobals.tileData[Cell.i, Cell.j].hasUnit and Cell != self.Tile.Cell: continue
+            if DG.tileData[Cell.i, Cell.j].hasUnit and Cell != self.Tile.Cell: continue
             self.bg.set_cell_color(Cell.i, Cell.j, Colour)
             self.bg.set_cell_opacity(Cell.i, Cell.j, 255)
 
@@ -94,14 +92,14 @@ class Unit:
         if Test:
             return In_Range(self.Tile.Cell, self.AttackRange, self, lambda x: 1,
                             lambda C, P, Unit: C is None or C in P,
-                            Test_Fun=lambda C: DefineGlobals.tileData[C.i, C.j].hasUnit and
-                                               DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn)
+                            Test_Fun=lambda C: DG.tileData[C.i, C.j].hasUnit and
+                                               DG.tileData[C.i, C.j].unit.P1 != DG.P1Turn)
         else:
             P = In_Range(self.Tile.Cell, self.AttackRange, self,
                          lambda x: 1, lambda C, P, Unit: C is None or C in P)
         for Cell in P:
-            if not DefineGlobals.tileData[Cell.i,Cell.j].hasUnit or \
-                            DefineGlobals.tileData[Cell.i, Cell.j].unit.P1 == DefineGlobals.P1Turn: continue
+            if not DG.tileData[Cell.i, Cell.j].hasUnit or \
+                            DG.tileData[Cell.i, Cell.j].unit.P1 == DG.P1Turn: continue
             self.bg.set_cell_color(Cell.i, Cell.j, Colour)
             self.bg.set_cell_opacity(Cell.i, Cell.j, 255)
 
@@ -116,10 +114,10 @@ class Unit:
                      lambda C, P, Unit: C is None or
                                         C in P or
                                         (not self.fly and
-                                         DefineGlobals.tileData[C.i, C.j].hasUnit and
-                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn))
+                                         DG.tileData[C.i, C.j].hasUnit and
+                                         DG.tileData[C.i, C.j].unit.P1 != DG.P1Turn))
         for Cell in P:
-            New_Cell = DefineGlobals.tileData[Cell.i, Cell.j]
+            New_Cell = DG.tileData[Cell.i, Cell.j]
             if New_Cell.hasUnit and Cell != self.Tile.Cell: continue
             Enemy_Cell = self.Enemy_In_Range(Cell)
             if Enemy_Cell is not None:
@@ -136,12 +134,11 @@ class Unit:
         P = In_Range(Cell, self.AttackRange, self,
                      lambda x: 1,
                      lambda C, P, Unit: C is None or C in P,
-                     Break_Fun=lambda C: DefineGlobals.tileData[C.i, C.j].hasUnit and
-                                         DefineGlobals.tileData[C.i, C.j].unit.P1 != DefineGlobals.P1Turn)
-        return (P)
+                     Break_Fun=lambda C: DG.tileData[C.i, C.j].hasUnit and
+                                         DG.tileData[C.i, C.j].unit.P1 != DG.P1Turn)
+        return P
 
-
-    def Move_Towards_Closest_Enemy(self):
+    def Move_Towards_Closest_Enemy(self) -> None:
         """
         Finds the closest enemy (relative to this unit) and moves towards them.  May not necessarily
         be an optimal path if the movement cost is greater than 1 and there are multiple shortest paths.
@@ -149,7 +146,7 @@ class Unit:
         :return:
         """
         Path = Find_Path_To_Nearest_Enemy(self.Tile.Cell)
-        if Path == None: return
+        if Path is None: return
         # Go down the path until the movement range runs out.
         Move_Left = self.MoveRange
         while Move_Left >= Path[-1].tile.properties['MovementCost']:

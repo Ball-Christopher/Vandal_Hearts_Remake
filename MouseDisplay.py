@@ -16,7 +16,7 @@ To Do:
 Proper victory transitions
 More than two sides???
 '''
-import DefineGlobals
+import DG
 
 class MouseDisplay(cocos.layer.Layer):
     is_event_handler = True
@@ -31,25 +31,27 @@ class MouseDisplay(cocos.layer.Layer):
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         self.position = (x,y)
-        mx, my = DefineGlobals.scroller.pixel_from_screen(x, y)
-        cell = DefineGlobals.bg.get_at_pixel(mx, my)
-        key = DefineGlobals.bg.get_key_at_pixel(mx, my)
-        New_Tile = DefineGlobals.tileData[key]
-        # Check that user clicked inside the map, and inside any context menus.
-        if not cell or self.InMenu:
+        mx, my = DG.scroller.pixel_from_screen(x, y)
+        cell = DG.bg.get_at_pixel(mx, my)
+        key = DG.bg.get_key_at_pixel(mx, my)
+        try:
+            New_Tile = DG.tileData[key]
+        except KeyError:
             return
+        # Check that user clicked inside the map, and inside any context menus.
+        if not cell or self.InMenu: return
         # Check that the user is not attacking
         if self.Attack and 'color4' in cell.properties.keys() and \
                         cell.properties['color4'] == (255,0,0,255) and \
-                New_Tile.hasUnit and New_Tile.unit.P1 != DefineGlobals.P1Turn:
+                New_Tile.hasUnit and New_Tile.unit.P1 != DG.P1Turn:
             Resolve_Attack(self.last, key)
             self.Attack = False
             self.RemoveHighlight()
-            self.UpdateTurn(DefineGlobals.P1Turn)
+            self.UpdateTurn(DG.P1Turn)
             # Check the victory conditions
             P1_Alive = False
             P2_Alive = False
-            for T in DefineGlobals.tileData.values():
+            for T in DG.tileData.values():
                 if T.hasUnit and T.unit.P1:
                     P1_Alive = True
                 if T.hasUnit and not T.unit.P1:
@@ -57,26 +59,26 @@ class MouseDisplay(cocos.layer.Layer):
                 if P1_Alive and P2_Alive: return
             # DO something about the victory conditions
             print("Player 1 Wins" if P1_Alive else "Player 2 Wins")
-            DefineGlobals.Pop()
+            DG.Pop()
         elif self.Attack:
             return
         # Check if user can move the unit (by looking at the tile color)
         if 'color4' in cell.properties.keys() and cell.properties['color4'] == (0, 0, 255, 255):
             # Move the unit to this square.
-            Old_Tile = DefineGlobals.tileData[self.last]
-            NewCell = DefineGlobals.bg.get_key_at_pixel(mx, my)
-            if Old_Tile.unit.P1 == DefineGlobals.P1Turn and \
-                    (New_Tile == Old_Tile or not DefineGlobals.tileData[NewCell].hasUnit):
+            Old_Tile = DG.tileData[self.last]
+            NewCell = DG.bg.get_key_at_pixel(mx, my)
+            if Old_Tile.unit.P1 == DG.P1Turn and \
+                    (New_Tile == Old_Tile or not DG.tileData[NewCell].hasUnit):
                 Old_Tile.unit.MoveUnit(NewCell[0] - self.last[0], NewCell[1] - self.last[1])
-                self.ActionMenu(DefineGlobals.tileData[NewCell], self.last)
-            self.last = DefineGlobals.bg.get_key_at_pixel(mx, my)
+                self.ActionMenu(DG.tileData[NewCell], self.last)
+            self.last = DG.bg.get_key_at_pixel(mx, my)
             self.RemoveHighlight()
             return
         self.RemoveHighlight()
         # If we have clicked on a unit, highlight the available movement squares.
-        if New_Tile.hasUnit and New_Tile.unit.P1 == DefineGlobals.P1Turn:  # CHECK FOR MOVEMENT AND CORRECT TEAM TOO.
+        if New_Tile.hasUnit and New_Tile.unit.P1 == DG.P1Turn:  # CHECK FOR MOVEMENT AND CORRECT TEAM TOO.
             New_Tile.unit.HighlightAvailable()
-            self.last = DefineGlobals.bg.get_key_at_pixel(mx, my)
+            self.last = DG.bg.get_key_at_pixel(mx, my)
             return
         # Finally, if we click on an empty square we want to bring up a "End Turn" menu
 
@@ -117,13 +119,13 @@ class MouseDisplay(cocos.layer.Layer):
         Unit = T.unit
         Pos = Unit.Sprite.position
         # Put the menu in the correct place...
-        if Pos[0] <= DefineGlobals.bg.px_width//2 and Pos[1] <= DefineGlobals.bg.px_height//2:
+        if Pos[0] <= DG.bg.px_width // 2 and Pos[1] <= DG.bg.px_height // 2:
             # Put menu above right
             self.contextMenuBck.position = (Pos[0]+50,Pos[1]+50)
-        elif Pos[0] > DefineGlobals.bg.px_width//2 and Pos[1] <= DefineGlobals.bg.px_height//2:
+        elif Pos[0] > DG.bg.px_width // 2 and Pos[1] <= DG.bg.px_height // 2:
             # Put menu above left
             self.contextMenuBck.position = (Pos[0]-50,Pos[1]+50)
-        elif Pos[0] <= DefineGlobals.bg.px_width//2 and Pos[1] > DefineGlobals.bg.px_height//2:
+        elif Pos[0] <= DG.bg.px_width // 2 and Pos[1] > DG.bg.px_height // 2:
             # Put menu below right
             self.contextMenuBck.position = (Pos[0]+50,Pos[1]-50)
         else:
@@ -133,19 +135,19 @@ class MouseDisplay(cocos.layer.Layer):
         self.M.anchor = self.contextMenuBck.anchor
         self.M.position = (0,0)
         # Add the menu to the unit layer.
-        DefineGlobals.unit_layer.add(self.contextMenuBck)
+        DG.unit_layer.add(self.contextMenuBck)
 
     def Stay(self):
         self.InMenu = False
-        DefineGlobals.unit_layer.remove(self.contextMenuBck)
-        self.UpdateTurn(DefineGlobals.P1Turn)
+        DG.unit_layer.remove(self.contextMenuBck)
+        self.UpdateTurn(DG.P1Turn)
         pass
 
     def Cancel(self,T,last):
         self.InMenu = False
-        CP = DefineGlobals.bg.get_key_at_pixel(T.unit.Sprite.position[0], T.unit.Sprite.position[1])
+        CP = DG.bg.get_key_at_pixel(T.unit.Sprite.position[0], T.unit.Sprite.position[1])
         T.unit.MoveUnit(last[0] - CP[0], last[1] - CP[1], Unmove=True)
-        DefineGlobals.unit_layer.remove(self.contextMenuBck)
+        DG.unit_layer.remove(self.contextMenuBck)
         pass
 
     def MAttack(self, T):
@@ -154,33 +156,33 @@ class MouseDisplay(cocos.layer.Layer):
         self.Attack = True
         Unit = T.unit
         Unit.HighlightAttack()
-        DefineGlobals.unit_layer.remove(self.contextMenuBck)
+        DG.unit_layer.remove(self.contextMenuBck)
         pass
 
     def RemoveHighlight(self):
         # Remove all highlighting from the map...
-        for col in DefineGlobals.bg.cells:
+        for col in DG.bg.cells:
             for c in col:
-                DefineGlobals.bg.set_cell_color(c.i, c.j, (255, 255, 255))
-                DefineGlobals.bg.set_cell_opacity(c.i, c.j, 255)
+                DG.bg.set_cell_color(c.i, c.j, (255, 255, 255))
+                DG.bg.set_cell_opacity(c.i, c.j, 255)
 
-    def UpdateTurn(self,PTurn):
+    def UpdateTurn(self, PTurn):
         # Check if all units in the current turn have moved
         # This is ugly, but it works...
-        for T in DefineGlobals.tileData.values():
+        for T in DG.tileData.values():
             if T.hasUnit and T.unit.P1 == PTurn and T.unit.moved == False:
                 # If there is a unit that hasn't moved on the moving side don't change.
                 return
         # Else change turn if everyone has moved.
-        for T in DefineGlobals.tileData.values():
+        for T in DG.tileData.values():
             if T.hasUnit and T.unit.P1 == PTurn:
                 T.unit.EndTurn()
-        DefineGlobals.P1Turn = not DefineGlobals.P1Turn
+        DG.P1Turn = not DG.P1Turn
         # Add the "AI" layer over the top.
-        if not DefineGlobals.P1Turn:
-            Units = [New_Tile.unit for New_Tile in DefineGlobals.tileData.values()
-                     if New_Tile.hasUnit and New_Tile.unit.P1 == DefineGlobals.P1Turn]
+        if not DG.P1Turn:
+            Units = [New_Tile.unit for New_Tile in DG.tileData.values()
+                     if New_Tile.hasUnit and New_Tile.unit.P1 == DG.P1Turn]
             for Enemy in Units:
                 Enemy.Zombie()
                 Enemy.EndTurn()
-        DefineGlobals.P1Turn = not DefineGlobals.P1Turn
+        DG.P1Turn = not DG.P1Turn

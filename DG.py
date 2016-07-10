@@ -1,5 +1,3 @@
-# DefineGlobals.py
-
 """
 CHRIS
 
@@ -9,7 +7,7 @@ particularly easy with Python...
 Can be used with import DefineGlobals, with variables called by
 DefineGlobals.<Variable Name>
 
-Not partcilarly elegant, but it may be refactored later if it annoys me enough.
+Not particularly elegant, but it may be refactored later if it annoys me enough.
 
 02/01/2015: Updated to include control of the director functions...
 """

@@ -15,7 +15,7 @@ Created the DefineGlobals class to hold the old global variables, which avoids
 the circular dependencies which existed previously.
 '''
 
-import DefineGlobals
+import DG
 
 class Control:
     def __init__(self):
@@ -24,22 +24,22 @@ class Control:
 
     def main(self):
 
-        DefineGlobals.P1Turn = True
+        DG.P1Turn = True
 
-        DefineGlobals.Start()
+        DG.Start()
 
         # Create a layer for the background.
-        DefineGlobals.scroller = layer.ScrollingManager()
+        DG.scroller = layer.ScrollingManager()
         # Create another layer for the units
-        DefineGlobals.unit_layer = layer.ScrollableLayer()
+        DG.unit_layer = layer.ScrollableLayer()
 
         self.CreateTileMap()
         self.CreateUnits()
 
         # Create a scene for the map.
-        main_scene = cocos.scene.Scene(DefineGlobals.scroller, MouseDisplay())
-        DefineGlobals.AddQueue(main_scene)
-        DefineGlobals.Pop()
+        main_scene = cocos.scene.Scene(DG.scroller, MouseDisplay())
+        DG.AddQueue(main_scene)
+        DG.Pop()
 
     def CreateTileMap(self):
 
@@ -50,7 +50,7 @@ class Control:
         bg_layer = self.test_layer['Background']
 
         # Add background layer to the scroller.
-        DefineGlobals.scroller.add(bg_layer)
+        DG.scroller.add(bg_layer)
 
         # Extract the properties into a dictionary
         tileDataArray = {}
@@ -65,9 +65,9 @@ class Control:
             x += 1
             y = 0
 
-        DefineGlobals.tileData = tileDataArray
+        DG.tileData = tileDataArray
         # Add the background layer as a permanent field
-        DefineGlobals.bg = bg_layer
+        DG.bg = bg_layer
 
 
 
@@ -85,31 +85,29 @@ class Control:
                 # Get the Tile which the unit is on
                 x, y = Character.position
                 # print(o.position,DefineGlobals.bg.get_key_at_pixel(x,y),UnitType)
-                T = DefineGlobals.tileData[DefineGlobals.bg.get_key_at_pixel(x,y)]
+                T = DG.tileData[DG.bg.get_key_at_pixel(x, y)]
                 Tile = T.Cell
                 # Put the unit in the correct position
                 unit.position = (Character.position[0] + Tile.width // 2,
                                  Character.position[1] + Tile.height // 2)
 
                 if P1:
-                    Ch = DefineGlobals.Ch_Stats[UnitType]
+                    Ch = DG.Ch_Stats[UnitType]
                     Properties = {'HP': Ch.HP, 'MP': Ch.MP, 'Move': Ch.Move, 'AtkRng': Ch.AtkRng,
                                   'AT': Ch.AT, 'DF': Ch.DF, 'AGL': Ch.AGL}
                     # Create a Unit class, which can store the important information for each unit.
-                    U = Unit(unit, T, UnitType, DefineGlobals.bg, P1, Properties)
+                    U = Unit(unit, T, UnitType, DG.bg, P1, Properties)
                     pass
                 else:
                     # Else read in from map information for player 2
-                    U = Unit(unit, T, UnitType, DefineGlobals.bg, P1, Character.properties)
+                    U = Unit(unit, T, UnitType, DG.bg, P1, Character.properties)
                     pass
                 # Update the tile information to reflect unit
                 T.hasUnit = True
                 T.unit = U
                 # Add unit to the unit layer.
-                DefineGlobals.unit_layer.add(unit)
+                DG.unit_layer.add(unit)
             P1 = False
 
         # Add unit layer to the scroller (make it visible...)
-        DefineGlobals.scroller.add(DefineGlobals.unit_layer)
-
-
+        DG.scroller.add(DG.unit_layer)
