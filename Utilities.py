@@ -29,6 +29,7 @@ def Resolve_Attack(Attacking_Cell, Defending_Cell):
     DfUnit = DG.tileData[Defending_Cell].unit
     Dirmap = {'Up': '10', 'Down': '1', 'Left': '4', 'Right': '7'}
     Direction = Get_Direction(AtUnit, DfUnit)
+    AtUnit.Direction = Direction
     Image = 'Characters/' + AtUnit.UnitType + Dirmap[Direction] + '.png'
     Set_Image(AtUnit, Image)
     DfUnit.Hit(AtUnit)
@@ -40,6 +41,7 @@ def Resolve_Attack(Attacking_Cell, Defending_Cell):
     # Turn towards attacker even if you can't counter.
     Direction = Get_Direction(DfUnit, AtUnit)
     Image = 'Characters/' + DfUnit.UnitType + Dirmap[Direction] + '.png'
+    DfUnit.Direction = Direction
     Set_Image(DfUnit, Image)
     if abs(Attacking_Cell[0] - Defending_Cell[0]) + abs(Attacking_Cell[1] - Defending_Cell[1]) <= DfUnit.AttackRange:
         AtUnit.Hit(DfUnit)

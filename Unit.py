@@ -28,6 +28,7 @@ class Unit:
         self.AT = Properties['AT']
         self.DF = Properties['DF']
         self.AGL = Properties['AGL']
+        self.Direction = Properties['Direction']
         self.Update_Label()
         pass
 
@@ -51,8 +52,15 @@ class Unit:
         self.Sprite.add(Health)
 
     def Hit(self, AtUnit):
-        # Simple mechanics for now.
-        self.HP -= (AtUnit.AT//2 - self.DF//6)
+        # Add concept of direction.
+        if self.Direction == AtUnit.Direction:
+            Direction_Bonus = 1.5
+        elif (self.Direction, AtUnit.Direction) in (
+        ('Left', 'Right'), ('Right', 'Left'), ('Up', 'Down'), ('Down', 'Up')):
+            Direction_Bonus = 1
+        else:
+            Direction_Bonus = 1.25
+        self.HP -= round(AtUnit.AT // 2 * Direction_Bonus - self.DF // 6, 0)
         self.Sprite.children = []
         self.Update_Label()
         if self.HP <= 0:
@@ -143,6 +151,8 @@ class Unit:
         Finds the closest enemy (relative to this unit) and moves towards them.  May not necessarily
         be an optimal path if the movement cost is greater than 1 and there are multiple shortest paths.
         No explicit tie-breaking is done when more than one closest unit is present.
+
+        10/07/2016: Modified to not land on a cell which is already inhabited.
         :return:
         """
         Path = Find_Path_To_Nearest_Enemy(self.Tile.Cell)
@@ -152,5 +162,10 @@ class Unit:
         while Move_Left >= Path[-1].tile.properties['MovementCost']:
             Next_Cell = Path.pop()
             Move_Left -= Next_Cell.tile.properties['MovementCost']
+            if DG.tileData[Next_Cell.i, Next_Cell.j].hasUnit: continue
+            Move_Cell = Next_Cell.i, Next_Cell.j
         # Move the unit to this cell
-        self.MoveUnit(Next_Cell.i - self.Tile.Cell.i, Next_Cell.j - self.Tile.Cell.j)
+        try:
+            self.MoveUnit(Move_Cell[0] - self.Tile.Cell.i, Move_Cell[1] - self.Tile.Cell.j)
+        except NameError:
+            return

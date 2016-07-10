@@ -94,12 +94,13 @@ class Control:
                 if P1:
                     Ch = DG.Ch_Stats[UnitType]
                     Properties = {'HP': Ch.HP, 'MP': Ch.MP, 'Move': Ch.Move, 'AtkRng': Ch.AtkRng,
-                                  'AT': Ch.AT, 'DF': Ch.DF, 'AGL': Ch.AGL}
+                                  'AT': Ch.AT, 'DF': Ch.DF, 'AGL': Ch.AGL, 'Direction': Dir}
                     # Create a Unit class, which can store the important information for each unit.
                     U = Unit(unit, T, UnitType, DG.bg, P1, Properties)
                     pass
                 else:
                     # Else read in from map information for player 2
+                    Character.properties['Direction'] = Dir
                     U = Unit(unit, T, UnitType, DG.bg, P1, Character.properties)
                     pass
                 # Update the tile information to reflect unit

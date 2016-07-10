@@ -5,7 +5,7 @@ This file holds variables that need to be shared across files/modules, which is 
 particularly easy with Python...
 
 Can be used with import DefineGlobals, with variables called by
-DefineGlobals.<Variable Name>
+DG.<Variable Name>
 
 Not particularly elegant, but it may be refactored later if it annoys me enough.
 
@@ -71,7 +71,7 @@ def init():
 
 def Start():
     # Create a graphics object effectively.
-    director.init(resizable=True)  # width=800, height=600, resizable=True)
+    director.init(width=800, height=600, resizable=True)
 
 
 def AddQueue(main_scene):
